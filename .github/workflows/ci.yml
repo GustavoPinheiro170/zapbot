@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Type-check, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check flow-engine
+        run: npx tsc --noEmit -p packages/flow-engine
+
+      - name: Type-check whatsapp-adapter
+        run: npx tsc --noEmit -p packages/whatsapp-adapter
+
+      - name: Type-check api
+        run: npx tsc --noEmit -p apps/api
+
+      - name: Type-check web
+        run: npx tsc --noEmit -p apps/web
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build web (smoke test for the Vercel build)
+        run: npm run build -w @whatsbot/web

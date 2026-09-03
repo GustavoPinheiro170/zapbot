@@ -21,6 +21,8 @@ export interface ServerDeps {
   conversationRepository: InMemoryConversationRepository;
   /** Also holds which flow is active — see settingsRepository.activeFlowId. */
   settingsRepository: InMemorySettingsRepository;
+  /** Restrict CORS to this origin (the deployed dashboard's URL) in production. Defaults to reflecting any origin, which is fine for local dev. */
+  corsOrigin?: string;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface ServerDeps {
 export function buildServer(deps: ServerDeps): FastifyInstance {
   const app = Fastify({ logger: false });
 
-  app.register(cors, { origin: true });
+  app.register(cors, { origin: deps.corsOrigin ?? true });
 
   const dynamicAdapter = new DynamicAdapter(deps.settingsRepository, deps.adapter);
 

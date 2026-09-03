@@ -63,6 +63,7 @@ async function main() {
     flowRepository,
     conversationRepository: new InMemoryConversationRepository(),
     settingsRepository,
+    corsOrigin: process.env.WEB_ORIGIN || undefined,
   });
 
   await app.listen({ port, host: "0.0.0.0" });

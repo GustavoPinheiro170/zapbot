@@ -126,6 +126,65 @@ Duas formas, sem precisar reiniciar a API:
 Sem nenhuma das duas, a API roda normalmente com o `MockAdapter` em memória (modo de
 simulação) — o robô responde e move o Kanban normalmente, só não manda mensagem real.
 
+## Deploy (para testar o webhook em produção)
+
+O painel (`apps/web`) é uma SPA estática — encaixe perfeito pra Vercel. A API
+(`apps/api`) é um servidor Fastify de processo contínuo com estado em memória
+(conversas, configurações) — **não roda em serverless sem reescrever essa parte**, então
+vai para a Railway (processo contínuo, como já roda localmente). O Mongo local (Docker) não
+é alcançável pela nuvem, então a API de produção usa o MongoDB Atlas.
+
+`railway.json` (raiz) e `apps/web/vercel.json` já estão prontos — falta só conectar as
+contas, o que só você pode fazer (login/criação de conta não são algo que eu consiga fazer
+por você):
+
+### 1. GitHub
+```bash
+gh repo create whatsbot --private --source=. --push
+# ou, sem a CLI do GitHub: crie um repo vazio no site e depois
+git remote add origin <url-do-repo>
+git push -u origin main
+```
+
+### 2. MongoDB Atlas
+Crie um cluster gratuito (M0) em [mongodb.com/atlas](https://www.mongodb.com/atlas) →
+Database Access (crie um usuário) → Network Access (libere `0.0.0.0/0` pra simplificar, ou
+o IP da Railway) → copie a *connection string* (`mongodb+srv://...`).
+
+### 3. Railway (API)
+Novo projeto → "Deploy from GitHub repo" → selecione este repositório (Root Directory
+pode ficar em branco/raiz — o `railway.json` já aponta pro workspace certo). Em
+Variables, adicione:
+
+```
+MONGODB_URI=<connection string do Atlas>
+META_VERIFY_TOKEN=<uma palavra-chave sua>
+META_ACCESS_TOKEN=<opcional — dá pra configurar depois pelo painel>
+META_PHONE_NUMBER_ID=<opcional — idem>
+WEB_ORIGIN=<preenche depois do passo 4, com a URL da Vercel>
+```
+
+Depois do deploy, copie a URL pública que a Railway gera (algo como
+`https://seu-projeto.up.railway.app`) — é o domínio do seu webhook:
+`https://seu-projeto.up.railway.app/webhook/whatsapp`.
+
+### 4. Vercel (painel)
+Novo projeto → importe o mesmo repositório → **Root Directory: `apps/web`** (a Vercel
+detecta o `vercel.json` de lá). Em Environment Variables:
+
+```
+VITE_API_URL=<URL da Railway, sem barra no final>
+```
+
+### 5. Fechar o ciclo
+- Volte na Railway e preencha `WEB_ORIGIN` com a URL que a Vercel gerou (restringe o CORS).
+- No painel da Meta (WhatsApp → Configuration → Webhook), cadastre a Callback URL da
+  Railway (`.../webhook/whatsapp`) e o mesmo `META_VERIFY_TOKEN`.
+- A partir daqui, todo `git push` pra `main` aciona automaticamente: o CI do GitHub
+  Actions (`.github/workflows/ci.yml` — type-check, testes, build) e, em paralelo, os
+  deploys da Vercel e da Railway (cada uma com sua própria integração nativa do GitHub —
+  não precisa de passo manual de deploy no workflow). Nada é publicado se o build falhar.
+
 ## Testes e a arquitetura TDD
 
 ```bash
@@ -148,7 +207,8 @@ com `fetch` injetado — nenhum teste bate na API real) e para as rotas do Fasti
 (`app.inject()`, sem subir servidor). No frontend, `KanbanBoard` segue o mesmo ciclo com
 Testing Library.
 
-Estado atual: **33 testes, todos passando**, cobrindo as três camadas.
+Estado atual: **80 testes, todos passando**, cobrindo motor de fluxos, adapter do
+WhatsApp, API e frontend.
 
 ## O que é real e o que é esqueleto (para o próximo passo)
 
