@@ -131,12 +131,14 @@ simulação) — o robô responde e move o Kanban normalmente, só não manda me
 O painel (`apps/web`) é uma SPA estática — encaixe perfeito pra Vercel. A API
 (`apps/api`) é um servidor Fastify de processo contínuo com estado em memória
 (conversas, configurações) — **não roda em serverless sem reescrever essa parte**, então
-vai para a Railway (processo contínuo, como já roda localmente). O Mongo local (Docker) não
-é alcançável pela nuvem, então a API de produção usa o MongoDB Atlas.
+vai para a Render (processo contínuo, como já roda localmente; camada gratuita disponível
+para esse tipo de serviço). O Mongo local (Docker) não é alcançável pela nuvem, então a API
+de produção usa o MongoDB Atlas.
 
-`railway.json` (raiz) e `apps/web/vercel.json` já estão prontos — falta só conectar as
+`render.yaml` (raiz) e `apps/web/vercel.json` já estão prontos — falta só conectar as
 contas, o que só você pode fazer (login/criação de conta não são algo que eu consiga fazer
-por você):
+por você). Há também um `railway.json` no repositório, caso você volte a usar a Railway
+num plano pago no futuro — mas o guia abaixo segue pela Render.
 
 ### 1. GitHub
 ```bash
@@ -148,13 +150,14 @@ git push -u origin master
 
 ### 2. MongoDB Atlas
 Crie um cluster gratuito (M0) em [mongodb.com/atlas](https://www.mongodb.com/atlas) →
-Database Access (crie um usuário) → Network Access (libere `0.0.0.0/0` pra simplificar, ou
-o IP da Railway) → copie a *connection string* (`mongodb+srv://...`).
+Database Access (crie um usuário) → Network Access (libere `0.0.0.0/0` pra simplificar) →
+copie a *connection string* (`mongodb+srv://...`) e acrescente o nome do banco no final:
+`.../whatsbot?retryWrites=true&w=majority`.
 
-### 3. Railway (API)
-Novo projeto → "Deploy from GitHub repo" → selecione este repositório (Root Directory
-pode ficar em branco/raiz — o `railway.json` já aponta pro workspace certo). Em
-Variables, adicione:
+### 3. Render (API)
+[render.com](https://render.com) → **New** → **Blueprint** → conecte o repositório — o
+Render lê o `render.yaml` da raiz automaticamente e já propõe o serviço `whatsbot-api`
+configurado. Ele vai pedir pra preencher as variáveis marcadas como secretas:
 
 ```
 MONGODB_URI=<connection string do Atlas>
@@ -164,25 +167,29 @@ META_PHONE_NUMBER_ID=<opcional — idem>
 WEB_ORIGIN=<preenche depois do passo 4, com a URL da Vercel>
 ```
 
-Depois do deploy, copie a URL pública que a Railway gera (algo como
-`https://seu-projeto.up.railway.app`) — é o domínio do seu webhook:
-`https://seu-projeto.up.railway.app/webhook/whatsapp`.
+Depois do deploy, copie a URL pública que a Render gera (algo como
+`https://whatsbot-api.onrender.com`) — é o domínio do seu webhook:
+`https://whatsbot-api.onrender.com/webhook/whatsapp`.
+
+> No plano gratuito, o serviço "dorme" depois de ~15 min sem receber requisição e leva
+> alguns segundos pra acordar na próxima — tranquilo para testar, só não espere resposta
+> instantânea se ele estiver frio.
 
 ### 4. Vercel (painel)
 Novo projeto → importe o mesmo repositório → **Root Directory: `apps/web`** (a Vercel
 detecta o `vercel.json` de lá). Em Environment Variables:
 
 ```
-VITE_API_URL=<URL da Railway, sem barra no final>
+VITE_API_URL=<URL da Render, sem barra no final>
 ```
 
 ### 5. Fechar o ciclo
-- Volte na Railway e preencha `WEB_ORIGIN` com a URL que a Vercel gerou (restringe o CORS).
+- Volte na Render e preencha `WEB_ORIGIN` com a URL que a Vercel gerou (restringe o CORS).
 - No painel da Meta (WhatsApp → Configuration → Webhook), cadastre a Callback URL da
-  Railway (`.../webhook/whatsapp`) e o mesmo `META_VERIFY_TOKEN`.
+  Render (`.../webhook/whatsapp`) e o mesmo `META_VERIFY_TOKEN`.
 - A partir daqui, todo `git push` pra `master` aciona automaticamente: o CI do GitHub
   Actions (`.github/workflows/ci.yml` — type-check, testes, build) e, em paralelo, os
-  deploys da Vercel e da Railway (cada uma com sua própria integração nativa do GitHub —
+  deploys da Vercel e da Render (cada uma com sua própria integração nativa do GitHub —
   não precisa de passo manual de deploy no workflow). Nada é publicado se o build falhar.
 
 ## Testes e a arquitetura TDD

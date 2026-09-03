@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: whatsbot-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start -w @whatsbot/api
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_PHONE_NUMBER_ID
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false

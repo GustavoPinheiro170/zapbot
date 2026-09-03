@@ -19,14 +19,19 @@ loadEnv({ path: path.join(packageDir, ".env") });
 const port = Number(process.env.PORT ?? 3333);
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://localhost:27017/whatsbot";
 
+/** Never log a connection string with credentials in plain text. */
+function maskMongoUri(uri: string): string {
+  return uri.replace(/\/\/([^:@/]+):([^@/]+)@/, "//***:***@");
+}
+
 async function main() {
   let db;
   try {
     db = await connectMongo(mongoUri);
   } catch (error) {
     console.error(
-      `[whatsbot-api] Não foi possível conectar ao MongoDB em "${mongoUri}".\n` +
-        `Suba o banco com "docker compose up -d" na raiz do projeto e tente novamente.\n`,
+      `[whatsbot-api] Não foi possível conectar ao MongoDB em "${maskMongoUri(mongoUri)}".\n` +
+        `Suba o banco com "docker compose up -d" na raiz do projeto (ou confira a MONGODB_URI, se estiver usando Atlas) e tente novamente.\n`,
       error,
     );
     process.exit(1);
@@ -68,7 +73,7 @@ async function main() {
 
   await app.listen({ port, host: "0.0.0.0" });
   console.log(`[whatsbot-api] listening on http://localhost:${port}`);
-  console.log(`[whatsbot-api] MongoDB conectado em ${mongoUri}`);
+  console.log(`[whatsbot-api] MongoDB conectado em ${maskMongoUri(mongoUri)}`);
 }
 
 main().catch((error) => {
