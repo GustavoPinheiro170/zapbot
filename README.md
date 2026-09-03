@@ -143,7 +143,7 @@ por você):
 gh repo create whatsbot --private --source=. --push
 # ou, sem a CLI do GitHub: crie um repo vazio no site e depois
 git remote add origin <url-do-repo>
-git push -u origin main
+git push -u origin master
 ```
 
 ### 2. MongoDB Atlas
@@ -180,7 +180,7 @@ VITE_API_URL=<URL da Railway, sem barra no final>
 - Volte na Railway e preencha `WEB_ORIGIN` com a URL que a Vercel gerou (restringe o CORS).
 - No painel da Meta (WhatsApp → Configuration → Webhook), cadastre a Callback URL da
   Railway (`.../webhook/whatsapp`) e o mesmo `META_VERIFY_TOKEN`.
-- A partir daqui, todo `git push` pra `main` aciona automaticamente: o CI do GitHub
+- A partir daqui, todo `git push` pra `master` aciona automaticamente: o CI do GitHub
   Actions (`.github/workflows/ci.yml` — type-check, testes, build) e, em paralelo, os
   deploys da Vercel e da Railway (cada uma com sua própria integração nativa do GitHub —
   não precisa de passo manual de deploy no workflow). Nada é publicado se o build falhar.
