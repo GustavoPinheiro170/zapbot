@@ -1,0 +1,23 @@
+{
+  "name": "@whatsbot/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@whatsbot/flow-engine": "0.1.0",
+    "@whatsbot/whatsapp-adapter": "0.1.0",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "mongodb": "^6.10.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

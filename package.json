@@ -1,0 +1,20 @@
+{
+  "name": "whatsbot",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev:api": "npm run dev -w @whatsbot/api",
+    "dev:web": "npm run dev -w @whatsbot/web"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
